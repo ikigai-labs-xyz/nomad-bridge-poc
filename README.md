@@ -1,66 +1,31 @@
-## Foundry
+## Nomad hack Circuit Breaker prevention
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+This repository contains a reconstruction of the Nomad bridge hack with an EIP-7265 Circuit Breaker integration.
 
-Foundry consists of:
-
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
+The Circuit Breaker integration completely renders the exploit unusable and prevents the funds from being drained.
 
 ## Usage
 
-### Build
+### Install dependencies
 
 ```shell
-$ forge build
+$ forge install
 ```
 
-### Test
+### Running the hack replication
 
 ```shell
 $ forge test
 ```
 
-### Format
+You can notice that the balance of the attacker stays 0, meaning that they are not able to drain any funds from the bridge.
+
+For a more detailed view run:
 
 ```shell
-$ forge fmt
+$ forge test -vvvv
 ```
 
-### Gas Snapshots
+You will notice the `RateLimited` event being emitted and the `prevent` function being called on the Reject Settlement Module contract when the exploit is being run.
 
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+This means, that the Circuit Breaker has triggered and is actively preventing the liquidity drain by reverting the attack transactions.
