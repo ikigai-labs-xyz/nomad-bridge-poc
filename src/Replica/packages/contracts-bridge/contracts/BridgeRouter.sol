@@ -7,7 +7,7 @@ import {IBridgeToken} from "./interfaces/IBridgeToken.sol";
 import {ITokenRegistry} from "./interfaces/ITokenRegistry.sol";
 import {IBridgeHook} from "./interfaces/IBridgeHook.sol";
 import {IEventAccountant} from "./interfaces/IEventAccountant.sol";
-import "../../../../circuit-breaker/core/CircuitBreaker.sol";
+import {SafeERC20, IERC20} from "../../../../circuit-breaker/core/CircuitBreaker.sol";
 // ============ External Imports ============
 import {XAppConnectionClient} from "@nomad-xyz/contracts-router/contracts/XAppConnectionClient.sol";
 import {Router} from "@nomad-xyz/contracts-router/contracts/Router.sol";
@@ -43,8 +43,6 @@ abstract contract BaseBridgeRouter is Version0, Router {
     // LP that pre-filled message to provide fast liquidity
     // while fast liquidity feature existed
     mapping(bytes32 => address) public liquidityProvider;
-
-    CircuitBreaker public circuitBreaker;
 
     // ============ Upgrade Gap ============
 
@@ -91,10 +89,6 @@ abstract contract BaseBridgeRouter is Version0, Router {
         uint256 amount
     );
 
-    event CircuitBreakerSet(
-        address indexed circuitBreaker
-    );
-
     // ======== Receive =======
     receive() external payable {}
 
@@ -106,12 +100,6 @@ abstract contract BaseBridgeRouter is Version0, Router {
     {
         tokenRegistry = ITokenRegistry(_tokenRegistry);
         __XAppConnectionClient_initialize(_xAppConnectionManager);
-    }
-
-    // for testing
-    function setCircuitBreaker(address _circuitBreaker) external {
-        circuitBreaker = CircuitBreaker(_circuitBreaker);
-        emit CircuitBreakerSet(_circuitBreaker);
     }
 
     // ======== External: Handle =========
@@ -436,16 +424,6 @@ abstract contract BaseBridgeRouter is Version0, Router {
             _recipient,
             _amount
         );
-
-        bool circuitBreakerTriggered = circuitBreaker.decreaseParameter(
-            keccak256(abi.encodePacked(_token)),
-            _amount,
-            _token,
-            0,
-            data
-        );
-
-        require(!circuitBreakerTriggered, "circuit breaker triggered");
 
         // circuit breaker code end
 

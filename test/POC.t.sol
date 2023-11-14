@@ -30,47 +30,13 @@ contract ReplicaPOC is Test, Constants {
 
       attacker = new Attacker();
 
-      // circuit breaker setup
-      rejectSettlementModule = new RejectSettlementModule();
-      circuitBreaker = new CircuitBreaker(
-         0, // _rateLimitCooldownPeriod,
-         60 * 60, // _withdrawalPeriod, time window in blocks
-         12, // _liquidityTickLength,
-         ADMIN // _initialOwner
-      );
-
       address [] memory protectedContracts = new address [] (1);
       protectedContracts[0] = Constants.ERC20_BRIDGE;
 
       vm.prank(ADMIN);
-      circuitBreaker.addProtectedContracts(protectedContracts);
-
-      registerAsset(Constants.WBTC);
-      registerAsset(Constants.WETH);
-      registerAsset(Constants.USDC);
-      registerAsset(Constants.USDT);
-      registerAsset(Constants.DAI);
-      registerAsset(Constants.FRAX);
-      registerAsset(Constants.CQT);
-
       // overriding bytecode
-      BridgeRouter circuitBreakerRouter = new BridgeRouter();
-      circuitBreakerRouter.setCircuitBreaker(address(circuitBreaker));
-      console.log("set");
-      vm.etch(Constants.BRIDGE_ROUTER_IMPL, address(circuitBreakerRouter).code);
-
-      BridgeRouter(payable(Constants.ERC20_BRIDGE)).setCircuitBreaker(address(circuitBreaker));
-      // bridgeRouter.setCircuitBreaker(address(circuitBreaker));
-   }
-
-   function registerAsset(address asset) internal {
-      vm.prank(ADMIN);
-      circuitBreaker.addSecurityParameter(
-         keccak256(abi.encodePacked(asset)), // _asset,
-         900, // _minLiqRetainedBps, - % of minimal value that the security param should always hold in escrow
-         0, // _limitBeginThreshold,
-         address(rejectSettlementModule) // _settlementModule
-      );
+      BridgeRouter bridgeRouter = new BridgeRouter();
+      vm.etch(Constants.BRIDGE_ROUTER_IMPL, address(bridgeRouter).code);
    }
 
    function addressToAssetId(address _addr) internal pure returns (bytes32) {
